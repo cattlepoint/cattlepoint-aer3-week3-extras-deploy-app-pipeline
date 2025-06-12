@@ -8,7 +8,9 @@ pipeline {
 
     stages {
         stage('Clean workspace') {
-            steps { cleanWs() }
+            steps {
+                cleanWs()
+            }
         }
 
         stage('Clone repo') {
@@ -36,7 +38,8 @@ pipeline {
         stage('Export AWS Account ID') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'eks-deploy']]) {
-                    sh '''#!/bin/bash
+                    sh '''
+                        #!/bin/bash
                         ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
                         echo "ACCOUNT_ID=$ACCOUNT_ID"
                     '''
@@ -46,8 +49,10 @@ pipeline {
 
         stage('Apply Kubernetes manifests') {
             steps {
-                dir('cattlepoint-aer3-week2') {
-                    sh 'cat cattlepoint-deployment.v1.yaml | envsubst | kubectl apply -f -'
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'eks-deploy']]) {
+                    dir('cattlepoint-aer3-week2') {
+                        sh 'cat cattlepoint-deployment.v1.yaml | envsubst | kubectl apply -f -'
+                    }
                 }
             }
         }
