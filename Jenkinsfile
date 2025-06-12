@@ -11,6 +11,12 @@ pipeline {
             steps { cleanWs() }
         }
 
+        stage('Clone repo') {
+            steps {
+                sh 'git clone https://github.com/cattlepoint/cattlepoint-aer3-week2.git'
+            }
+        }
+
         stage('Configure kubectl for EKS') {
             steps {
                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'eks-deploy']]) {
@@ -34,6 +40,14 @@ pipeline {
                         ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
                         echo "ACCOUNT_ID=$ACCOUNT_ID"
                     '''
+                }
+            }
+        }
+
+        stage('Apply Kubernetes manifests') {
+            steps {
+                dir('cattlepoint-aer3-week2') {
+                    sh 'cat cattlepoint-deployment.v1.yaml | envsubst | kubectl apply -f -'
                 }
             }
         }
